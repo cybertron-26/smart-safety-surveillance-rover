@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Safety Surveillance Rover - Monitoring Station</title>
+  <meta name="description" content="Smart Safety Surveillance Rover for Industrial and Mining Hazardous Environments">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header id="main-header" class="main-header">
+    <div class="header-content max-w-container">
+      <div class="brand">
+        <div class="brand-icon" id="brand-icon">⚡</div>
+        <div>
+          <h1 class="brand-title">SURVEILLANCE ROVER STATION</h1>
+          <p class="brand-sub">Industrial & Mining Hazardous Area Command Center</p>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="stat-pill"><span class="lbl">TIME:</span> <span id="clock-txt">00:00:00</span></div>
+        <div class="stat-pill" id="status-pill"><span class="lbl">STATUS:</span> <span id="system-status-text">SAFE</span></div>
+        <div id="estop-badge" class="estop-badge hidden">🚨 EMERGENCY STOP ACTIVE</div>
+      </div>
+
+      <div class="header-right">
+        <button id="sound-toggle-btn" class="btn-icon" title="Toggle Siren">🔊</button>
+        <div id="conn-badge" class="badge-conn online">● CONNECTED (Wi-Fi/BT)</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Global Worker Advisory & Emergency Banner -->
+  <div id="emergency-banner" class="emergency-banner safe-banner">
+    <div class="banner-inner max-w-container">
+      <div class="banner-info">
+        <span id="banner-siren-icon" class="siren-icon">🟢</span>
+        <div>
+          <div id="banner-title-text" class="banner-title">AREA SAFE – WORKERS CAN ENTER</div>
+          <p id="banner-msg-text" class="banner-sub">Rover inspection completed. All environmental metrics nominal.</p>
+        </div>
+      </div>
+      <button id="banner-estop-btn" class="btn-danger-pill">ENGAGE EMERGENCY STOP</button>
+    </div>
+  </div>
+
+  <!-- 7 Navigation Sections Bar -->
+  <nav class="nav-bar">
+    <div class="nav-inner max-w-container">
+      <button class="nav-tab active" data-tab="dashboard">1. Dashboard</button>
+      <button class="nav-tab" data-tab="rover">2. Rover Monitoring</button>
+      <button class="nav-tab" data-tab="environmental">3. Environmental Monitoring</button>
+      <button class="nav-tab" data-tab="camera">4. Camera Surveillance</button>
+      <button class="nav-tab" data-tab="alerts">5. Alerts <span id="alert-count-badge" class="tab-badge-red">0</span></button>
+      <button class="nav-tab" data-tab="simulation">6. Simulation</button>
+      <button class="nav-tab" data-tab="info">7. System Information</button>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="main-body max-w-container">
+
+    <!-- Demo Scenario Simulator Widget -->
+    <section class="demo-widget glass-card">
+      <div class="demo-header">
+        <div class="demo-title">🎮 HARDWARE DEMO SCENARIO SIMULATOR</div>
+        <div class="demo-active-tag">ACTIVE: <span id="active-scenario-name">NORMAL</span></div>
+      </div>
+      <div class="demo-grid">
+        <button class="demo-btn active" data-scenario="normal">1. Normal</button>
+        <button class="demo-btn" data-scenario="danger_gas">2. MQ-2 Smoke/Gas</button>
+        <button class="demo-btn" data-scenario="toxic_gas">3. MQ-135 Toxic Gas</button>
+        <button class="demo-btn" data-scenario="high_temp">4. Excessive Temp</button>
+        <button class="demo-btn" data-scenario="abnormal_humidity">5. Abnormal Hum</button>
+        <button class="demo-btn" data-scenario="obstacle_detected">6. Obstacle (&lt;20cm)</button>
+        <button class="demo-btn multi-danger" data-scenario="emergency_stop">7. Emergency Stop</button>
+      </div>
+    </section>
+
+    <!-- Disconnected Card -->
+    <div id="disconnected-card" class="disconnected-card hidden">
+      <span>⚠️ REMOTE LINK DISCONNECTED — Reconnecting to Arduino/ESP32...</span>
+      <button id="reconnect-btn" class="btn-sm">RETRY NOW</button>
+    </div>
+
+    <!-- 7 Page Views Container -->
+    <div id="page-content">
+
+      <!-- View 1: Dashboard -->
+      <div id="view-dashboard" class="page-view">
+        <div class="grid-3 mb-6">
+          
+          <div class="glass-card">
+            <div class="card-hdr">
+              <h3>⚡ SYSTEM STATUS OVERVIEW</h3>
+              <span class="badge-tag">ARDUINO / ESP32</span>
+            </div>
+            <div class="diag-list font-mono text-xs space-y-2">
+              <div class="diag-item"><span>SYSTEM STATUS:</span> <strong id="dash-system-status" class="text-safe">SAFE</strong></div>
+              <div class="diag-item"><span>ROVER STATUS:</span> <strong id="dash-rover-status" class="text-cyan">PATROLLING</strong></div>
+              <div class="diag-item"><span>CONTROLLER:</span> <strong class="text-slate font-bold">Arduino Uno / ESP32</strong></div>
+              <div class="diag-item"><span>MONITORING:</span> <strong class="text-safe">ACTIVE CONTINUOUS</strong></div>
+              <div class="diag-item"><span>OPERATING MODE:</span> <strong id="dash-op-mode" class="text-cyan font-bold">SAFE MODE</strong></div>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-hdr">
+              <h3>🔊 HARDWARE ACTUATOR OUTPUTS</h3>
+            </div>
+            <div class="led-grid">
+              <div class="led-box" id="led-green-box">
+                <div class="led-circle green" id="led-green-circle"></div>
+                <span>GREEN LED</span>
+                <strong id="led-green-val">ON</strong>
+              </div>
+              <div class="led-box" id="led-red-box">
+                <div class="led-circle red" id="led-red-circle"></div>
+                <span>RED LED</span>
+                <strong id="led-red-val">OFF</strong>
+              </div>
+              <div class="led-box" id="led-buzzer-box">
+                <div class="led-circle buzzer" id="led-buzzer-circle">🔊</div>
+                <span>BUZZER</span>
+                <strong id="led-buzzer-val">OFF</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-hdr">
+              <h3>📟 SIMULATED 16x2 / OLED DISPLAY</h3>
+            </div>
+            <div id="lcd-screen-widget" class="lcd-widget safe">
+              <p id="lcd-line1">[ TEMP: 29C  HUM: 60% ]</p>
+              <p id="lcd-line2">[ GAS: NORMAL ]</p>
+              <p id="lcd-line3">[ STATUS: SAFE ]</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sensor Readings Summary Grid -->
+        <h3 class="sec-lbl">SPECIFIED ENVIRONMENTAL SENSOR READINGS</h3>
+        <div class="sensors-grid" id="dash-sensors-grid">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <!-- View 2: Rover Monitoring -->
+      <div id="view-rover" class="page-view hidden">
+        <div class="grid-2-1">
+          <div class="glass-card">
+            <div class="card-hdr">
+              <h3>⚠️ ULTRASONIC OBSTACLE AVOIDANCE</h3>
+            </div>
+            <div id="obstacle-alert-banner" class="obstacle-banner hidden">
+              ⚠️ OBSTACLE DETECTED FRONT (&lt; 20 cm) — ROVER STOPPED FOR SAFETY
+            </div>
+            <div class="ultrasonic-grid">
+              <div class="us-box"><span>LEFT DISTANCE</span><strong id="us-left-val">140.0 cm</strong></div>
+              <div class="us-box highlight" id="us-front-box"><span>FRONT DISTANCE</span><strong id="us-front-val">120.0 cm</strong><span class="sub-txt">Min safe: 20 cm</span></div>
+              <div class="us-box"><span>RIGHT DISTANCE</span><strong id="us-right-val">130.0 cm</strong></div>
+            </div>
+            <div class="diag-item font-mono text-xs mt-4">
+              <span>L298N MOTOR DRIVER:</span> <strong id="l298n-status-txt">L: FORWARD | R: FORWARD</strong>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-hdr">
+              <h3>🎮 ROVER MOVEMENT & E-STOP</h3>
+            </div>
+            <button id="main-estop-btn" class="btn-estop">EMERGENCY STOP (SHUTDOWN MOTORS)</button>
+            <div class="dpad-box">
+              <span class="dpad-lbl">MANUAL DIRECTIONAL CONTROLS</span>
+              <div class="dpad-grid">
+                <div></div>
+                <button class="dpad-btn" data-cmd="forward">▲</button>
+                <div></div>
+                <button class="dpad-btn" data-cmd="left">◄</button>
+                <button class="dpad-btn stop-btn" data-cmd="stop">STOP</button>
+                <button class="dpad-btn" data-cmd="right">►</button>
+                <div></div>
+                <button class="dpad-btn" data-cmd="backward">▼</button>
+                <div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- View 3: Environmental Monitoring -->
+      <div id="view-environmental" class="page-view hidden">
+        <div class="sensors-grid mb-6" id="env-sensors-grid">
+          <!-- Injected by JS -->
+        </div>
+        <div class="glass-card">
+          <div class="card-hdr">
+            <h3>📈 REAL-TIME ENVIRONMENTAL TELEMETRY CHART</h3>
+          </div>
+          <div class="chart-box">
+            <svg id="env-chart-svg" viewBox="0 0 800 260" class="chart-svg"></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- View 4: Camera Surveillance -->
+      <div id="view-camera" class="page-view hidden">
+        <div class="glass-card">
+          <div class="card-hdr">
+            <h3>📹 LIVE CAMERA SURVEILLANCE</h3>
+            <span class="badge-tag warn">SIMULATED CAMERA FEED</span>
+          </div>
+          <canvas id="camera-canvas" width="800" height="400" class="canvas-feed"></canvas>
+
+          <div class="servo-ctrl-box">
+            <div>
+              <strong>SERVO CAMERA ROTATION CONTROL</strong>
+              <div id="servo-current-angle" class="text-cyan font-mono text-xs">SERVO ANGLE: CENTER (0°)</div>
+            </div>
+            <div class="servo-btns">
+              <button class="servo-btn" data-angle="LEFT">◄ LEFT (-45°)</button>
+              <button class="servo-btn active" data-angle="CENTER">CENTER (0°)</button>
+              <button class="servo-btn" data-angle="RIGHT">RIGHT (+45°) ►</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- View 5: Alerts -->
+      <div id="view-alerts" class="page-view hidden">
+        <div class="glass-card">
+          <div class="card-hdr">
+            <h3>🔔 RELEVANT SYSTEM ALERTS LOG</h3>
+          </div>
+          <div id="alerts-list-container" class="alerts-container">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- View 6: Simulation -->
+      <div id="view-simulation" class="page-view hidden">
+        <div class="glass-card">
+          <div class="card-hdr">
+            <h3>🎮 SYSTEM DEMONSTRATION & SCENARIO SIMULATOR</h3>
+          </div>
+          <div class="mode-toggles mb-6">
+            <button id="sim-safe-btn" class="mode-toggle-btn safe">FORCE SAFE MODE (Green LED ON, Buzzer OFF)</button>
+            <button id="sim-danger-btn" class="mode-toggle-btn danger">FORCE DANGER MODE (Red LED ON, Buzzer ON)</button>
+          </div>
+          <h4 class="sec-lbl">EXACT DEMONSTRATION TEST SCENARIOS</h4>
+          <div class="scenarios-list" id="sim-scenarios-list">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- View 7: System Information -->
+      <div id="view-info" class="page-view hidden">
+        <div class="glass-card">
+          <div class="card-hdr">
+            <h3>ℹ️ HARDWARE COMPONENTS & SYSTEM ROLES</h3>
+            <span class="badge-tag">15 COMPONENTS</span>
+          </div>
+          <div class="hw-grid" id="hw-info-grid">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer class="main-footer">
+    Smart Safety Surveillance Rover • Industrial & Mining Hazardous Environment Command Station
+  </footer>
+
+  <script src="/js/components.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
